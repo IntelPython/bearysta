@@ -1,3 +1,4 @@
+![logo](doc/logo-medium.png)
 # Bearysta
-![logo](doc/logo-large.png) Pandas-based statistics aggregation tool designed to replace Excel for automation with simplisity and flexibility in mind.
+Pandas-based statistics aggregation tool designed to replace Excel for automation with simplisity and flexibility in mind.
 It is configured with aggregation recipes that are concentrated description of actions in transformation and aggregation pipeline written in YAML format.
