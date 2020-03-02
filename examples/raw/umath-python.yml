@@ -1,0 +1,54 @@
+# File names which should be inputs to this benchmark.
+# Unix-style globbing is supported.
+input:
+    path: 'runs/*/*/*/*_umath_python*.out'
+    # Format of input files
+    format: csv
+    filter:
+        '^(stockpython3|intelpython3|Prefix)':    # TODO: decide how to avoid dropping csv headers by default
+        '^Overhead': drop
+        '^Unaligned': drop
+rename:
+    'CPE:aligned': 'CPE'
+
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: mean
+
+# Axis and series column names
+axis:
+- Size
+- Function
+
+series:
+- Prefix
+- Implementation
+
+# Create another table (or Excel filter) for each value in these columns
+variants:
+    - Mode
+    - Arch
+
+# Are higher values better?
+higher-is-better: false
+
+# Value columns
+values:
+- "CPE"
+
+# Precompute columns using lambda functions
+precomputed:
+    Mode: "'Serial' if row['File'].split('.')[1].split('_')[-1] == 'seq' else 'Parallel'"
+    Arch: "(row['Directory'].split('/')[-3].split('_')[-3:-2]+['Unknown'])[0]"
+
+# Filter out: require columns to NOT be certain values (after filter-keep)
+filter-out:
+    Prefix: [Prefix]
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 4
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: true
+

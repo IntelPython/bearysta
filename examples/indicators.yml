@@ -1,0 +1,53 @@
+input:
+    path: config/targets.csv
+    format: csv
+
+    # Input configuration files
+    # This will run the aggregation as described in these configuration files
+    # and use the dataframe output as an input to this aggregation
+    # Paths are relative to this configuration file, or absolute if
+    # they begin with a /.
+    config:
+    - indicators/arithmetics-mkl.yml
+    - indicators/arithmetics-numba.yml
+    - indicators/blackscholes.yml
+    - indicators/fft.yml
+    - indicators/rng.yml
+    - indicators/linalg.yml
+    - indicators/sklearn.yml
+    - indicators/daal4py.yml
+
+higher-is-better: true
+
+aggregation: max
+
+values:
+    - Ratio
+
+series:
+    - Prefix
+    - Mode
+
+axis:
+    - Domain
+    - Implementation
+    - Function
+
+variants:
+    - Arch
+
+filter-out:
+    Prefix:
+    - stockpython3
+
+    Implementation:
+    - numexpr
+
+    Function:
+    - scalar*array
+    - scalar+array
+    - scalar-array
+    - scalar/array
+
+number-format: 2
+number-format-max-only: false

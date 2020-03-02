@@ -1,0 +1,47 @@
+# File names which should be inputs to this benchmark.
+# Unix-style globbing is supported.
+input:
+    path:
+        runs/*/*/*/*_rng_*.out
+    format: csv
+    csv-header: "Prefix, Brng, Dist, Time"
+
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: mean
+
+# Axis and series column names
+axis:
+- Brng
+- Dist
+#- Size
+
+series:
+- Prefix
+
+# Create another table (or Excel filter) for each value in these columns
+variants:
+    - Arch
+
+# Are higher values better?
+higher-is-better: true
+
+# Value columns
+values:
+    - Time
+
+# Precompute columns using lambda functions
+precomputed:
+    Implementation: "'numpy' if row['Brng'] == 'None' else 'mkl_random'"
+    Brng: "'MT19937' if row['Brng'] == 'None' else row['Brng']"
+    Mode: "'Serial'"
+    Prefix: "(lambda p: 'Native-C' if p == 'native' else p)(row['Directory'].split('/')[-1])"
+    Arch: "(row['Directory'].split('/')[-3].split('_')[-3:-2]+['Unknown'])[0]"
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: true
+

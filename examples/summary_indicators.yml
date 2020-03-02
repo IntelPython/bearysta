@@ -1,0 +1,20 @@
+input:
+    config: indicators.yml
+
+higher-is-better: true
+aggregation: geomean
+values:
+    - Ratio
+
+series:
+    - Prefix
+    - Mode
+
+axis:
+    - Domain
+
+variants:
+    - Arch
+
+number-format: 2
+number-format-max-only: false

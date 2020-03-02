@@ -1,0 +1,60 @@
+input:
+    config:
+    - ../raw/blackscholes.yml
+
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: mean
+
+# Axis and series column names
+axis:
+    - Mode
+    - Size
+    - Function
+
+series:
+    - Prefix
+    - Implementation
+    - Accuracy
+
+variants:
+    - Arch
+
+# Are higher values better?
+higher-is-better: true
+
+# Value columns
+values: 
+    - Ratio
+
+
+# Precompute columns using lambda functions
+precomputed:
+    Domain: "'Numba'"
+    Function: "'Black Scholes'"
+    Ratio: "ratio_of('MOPS', Prefix='Native-C', Implementation='SVML', Accuracy='ha')"
+
+# Filter: require certain values for columns (after precompute and rename)
+filter-in: 
+    Size:
+#    - 524288
+#    - 1048576
+    - 16777216
+    Implementation:
+#    - SVML
+    - numba
+    Accuracy: [ha]
+
+# Filter out: require columns to NOT be certain values (after filter-keep)
+filter-out:
+    # Accuracy: [ep, ha]
+    #Prefix: [Prefix]
+    #Implementation: [VML, Numpy]
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: false
+

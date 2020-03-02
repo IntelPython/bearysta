@@ -1,0 +1,53 @@
+# File names which should be inputs to this benchmark.
+# Unix-style globbing is supported.
+input:
+    config:
+    - ../raw/rng.yml
+    
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: mean
+
+# Axis and series column names
+axis:
+    - Mode
+    - Function
+
+series:
+    - Prefix
+
+variants:
+    - Arch
+
+# Are higher values better?
+higher-is-better: true
+
+# Value columns
+values:
+    - Ratio
+
+rename:
+    Dist: Function
+
+# Precompute columns using lambda functions
+precomputed:
+    Domain: "'Random'"
+    Ratio: "1 / ratio_of('Time', Prefix='Native-C')"
+    drop: "row['Prefix'] == 'Native-C'"
+
+# Filter: require certain values for columns (after precompute and rename)
+filter-in:
+    Brng: [MT19937]
+    drop: [false]
+
+# Filter out: require columns to NOT be certain values (after filter-keep)
+filter-out:
+#    Prefix: [Prefix]
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: true
+

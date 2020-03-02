@@ -1,0 +1,52 @@
+# File names which should be inputs to this benchmark.
+# Unix-style globbing is supported.
+input:
+    config:
+    - ../raw/sklearn.yml
+    - ../raw/sklearn-native.yml
+    - ../raw/pca-native.yml
+    - ../raw/svm.yml
+    - ../raw/logreg.yml
+    - ../raw/df_clsf.yml
+    - ../raw/df_regr.yml
+
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: median
+
+# Axis and series column names
+axis:
+- Function
+- Mode
+series:
+- Prefix
+
+variants:
+- Arch
+# Are higher values better?
+higher-is-better: false
+
+# Value columns
+values:
+    - Ratio
+
+
+# Precompute columns using lambda functions
+precomputed:
+    Ratio: "1/ratio_of('Time', Prefix='Native-C')"
+    Implementation: "'daal4py'"
+    Domain: "'daal4py'"
+    drop: "row['Prefix'] != 'daal4py'"
+    Prefix: "'intelpython3'"
+
+filter-in:
+    drop: [false]
+
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: false
+

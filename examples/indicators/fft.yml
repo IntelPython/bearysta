@@ -1,0 +1,50 @@
+input:
+    config:
+    - ../raw/fft.yml
+
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: mean
+
+# Axis and series column names
+axis:
+    - Mode
+    - Function
+
+series:
+    - Prefix
+
+variants:
+    - Arch
+    - Place
+
+# Are higher values better?
+higher-is-better: true
+
+# Value columns
+values: 
+    - Ratio
+
+
+# Precompute columns using lambda functions
+precomputed:
+    Domain: "'FFT'"
+    Ratio: "1 / ratio_of('Median', Prefix='Native-C')"
+    drop: "row['Prefix'] == 'Native-C'"
+
+# Filter: require certain values for columns (after precompute and rename)
+filter-in: 
+    drop: [false]
+
+# Filter out: require columns to NOT be certain values (after filter-keep)
+filter-out:
+    #Prefix: [Native-C]
+    #Implementation: [VML, Numpy]
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: false
+

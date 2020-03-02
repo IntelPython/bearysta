@@ -1,0 +1,52 @@
+# Unix-style globbing is supported.
+input:
+    path: 'runs/*/*/*/*_svm.out'
+    format: csv
+    filter:
+        'prefix_ID': 'Prefix'
+        '^(Native-C)':
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: mean
+
+# Axis and series column names
+axis:
+    - Size
+    - classes
+    - features
+    - Mode
+    - Function
+
+series:
+    - Prefix
+
+rename:
+    fit: SVM.fit
+    predict: SVM.predict
+
+pack:
+    - columns: [SVM.fit, SVM.predict]
+      name: Function
+      value: Time
+
+values:
+    - Time
+
+# Create another table (or Excel filter) for each value in these columns
+variants:
+    - Arch
+
+# Are higher values better?
+higher-is-better: false
+
+# Precompute columns using lambda functions
+precomputed:
+    Size: "'{}x{}'.format(row['rows'], row['features'])"
+    Arch: "(row['Directory'].split('/')[-3].split('_')[-3:-2]+['Unknown'])[0]"
+    Mode: "'Serial' if row['threads'] == 1 else 'Parallel'"
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: false

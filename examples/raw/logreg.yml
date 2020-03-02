@@ -1,0 +1,60 @@
+# Unix-style globbing is supported.
+input:
+    path: 'runs/*/*/*/*_log_reg.out'
+    format: csv
+    filter:
+        'prefix_ID': 'Prefix'
+        '^@': drop
+        '^Native-C':
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: mean
+
+# Axis and series column names
+axis:
+    - Size
+    - classes
+    - Mode
+    - Function
+    - solver
+
+series:
+    - Prefix
+
+values:
+    - Time
+
+rename:
+    fit: LogReg.fit
+    predict: LogReg.predict
+
+pack:
+    - columns: [LogReg.fit, LogReg.predict]
+      name: Function
+      value: Time
+
+# Create another table (or Excel filter) for each value in these columns
+variants:
+    - Arch
+
+# Are higher values better?
+higher-is-better: false
+
+# Precompute columns using lambda functions
+precomputed:
+    Size: "'{}x{}'.format(int(row['rows']), int(row['features']))"
+    Arch: "(row['Directory'].split('/')[-3].split('_')[-3:-2]+['Unknown'])[0]"
+    Mode: "'Serial' if row['threads'] == 'Serial' or row['threads'] == 1 else 'Parallel'"
+
+filter-out:
+    classes: [2, 3]
+
+filter-in:
+    solver: [lbfgs] # temporary
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: false

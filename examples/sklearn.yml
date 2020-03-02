@@ -1,0 +1,54 @@
+# File names which should be inputs to this benchmark.
+# Unix-style globbing is supported.
+input:
+    config:
+    - indicators/sklearn.yml
+
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: median
+
+# Axis and series column names
+axis:
+- Function
+
+series:
+- Prefix
+
+# Expected series values in expected order.
+# The earlier it appears in the list, the slower it is.
+#expected:
+#- [StockPython]
+#- [IntelPython]
+#- [Native-C]
+
+# Create another table (or Excel filter) for each value in these columns
+variants:
+- Arch
+- Mode
+#- File
+
+# Are higher values better?
+higher-is-better: false
+
+# Value columns
+values:
+    - Ratio
+
+precompute:
+    Ratio: "np.max(df['Ratio'], 0.01)"
+
+filter-in:
+    Arch: [Xeon]
+    Mode: [Parallel]
+
+filter-out:
+    Function: [logreg.fit, logreg.predict]
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: false
+
