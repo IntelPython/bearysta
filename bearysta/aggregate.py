@@ -6,6 +6,7 @@ import numpy as np
 import sys
 import glob
 import tempfile
+import pkg_resources
 try:
     from ruamel.yaml import YAML
 except ImportError:
@@ -947,14 +948,18 @@ def main():
 
         if args.html:
             def write_html(f):
-                with open("html/header.html") as html:
-                    for line in html:
-                        f.write(line)
+                header = pkg_resources.resource_string(__name__,
+                                                       'html/header.html')
+                header = header.decode()
+                for line in header:
+                    f.write(line)
                 f.write('<h1><code>{}</code> Performance Results</h1>\n'.format(conf_name))
                 bench.create_html_pivot_table(df, f, plot=args.plot)
-                with open("html/footer.html") as html:
-                    for line in html:
-                        f.write(line)
+                footer = pkg_resources.resource_string(__name__,
+                                                       'html/footer.html')
+                footer = footer.decode()
+                for line in footer:
+                    f.write(line)
 
             with open(args.html.format(filename=conf_name), 'w') as f:
                 write_html(f)
