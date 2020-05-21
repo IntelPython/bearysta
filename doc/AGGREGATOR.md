@@ -41,7 +41,7 @@ optional arguments:
 
 
 ### Example
-```
+```yaml
 # File names which should be inputs to this benchmark.
 # Unix-style globbing is supported.
 input:
