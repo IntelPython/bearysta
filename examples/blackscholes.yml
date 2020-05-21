@@ -38,7 +38,7 @@ filter-in:
     Size:
 #    - 524288
 #    - 1048576
-    - 16777216
+    - 2097152
     Accuracy: [ha]
 
 # Filter out: require columns to NOT be certain values (after filter-keep)
