@@ -135,7 +135,8 @@ def main():
     parser.add_argument('--clean', '-C', action='store_true', default=False,
                         help="Delete environments before installing packages")
     parser.add_argument('--use-existing-env', '-E', action='store_true', default=False,
-                        help="Use the current conda environment, install nothing but benchmarks")
+                        help="Do not modify environments, install nothing but benchmarks."
+                             "(this is not the same as using the 'current' environment!)")
     parser.add_argument('--skip-package-listing', action='store_true', default=False,
                         help="Skip 'pip freeze' and 'conda list' steps")
     parser.add_argument('--benchmarks', '-b', default=None, nargs='+',
