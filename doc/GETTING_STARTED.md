@@ -108,9 +108,7 @@ the one that you want to use.
 - For a file path, use `"file:///path/to/channel/"`.
 
 At this time, you can also modify other parameters in the environment
-configurations. See
-(**TODO: unpublished documentation**)
-for more details.
+configurations. See [the runner page](RUNNER.md) for more details.
 
 
 ## Installing environments
@@ -119,7 +117,14 @@ You can now instruct `benchmark.py` to install environments. Make sure that
 you are still in the `base` environment on the benchmarking machine, and run
 
 ```bash
-python benchmark.py -C -b none --env-path envs/*
+python benchmark.py -C -b none --env-path envs/*.yaml
+```
+
+To only create specific benchmarking environments, pass a space-separated
+list of environment configuration paths to `--env-path`:
+
+```bash
+python benchmark.py -C -b none --env-path envs/intelpython.yaml envs/stockpython.yaml
 ```
 
 All environments will be created in the `envs/` directory.
@@ -128,16 +133,30 @@ creating them. The `-b none` argument asks for all benchmarks called "none",
 which is nothing. (this is a workaround)
 
 You should now find that there are directories inside `envs/` corresponding
-to each environment.
+to each environment. Note that you can treat these as normal conda environments
+and run `conda activate envs/name_of_env` to activate them. This can be useful for
+debugging the environment/benchmark.
+
+## Modifying environments
+
+If you need to modify an environment, there are two ways.
+1. Edit the environment configuration (recommended). If you can, try to simply
+   add packages needed in the environment configuration. Then `benchmark.py`
+   will handle installing those packages
+2. Activate the benchmarking environment already created, use `conda install`
+   or `pip install`, and pass `-E` instead of `-C` to the benchmark runner.
+   The `-E` option will instruct the runner to use "existing" environments,
+   i.e. not change them.
 
 ## Reading and writing benchmark configurations
 
 Now that you have the environments installed with benchmarks, you can inspect
 the benchmark configurations. Inside `envs/<envname>/benchmarks`, you can find
 a bunch of yaml files which specify instructions for each "benchmark suite".
+The name of each yaml file is the benchmark suite's name. Each file contains
+a list of "commands", which are individual benchmarks in the suite.
 
-More detailed documentation on benchmark configurations is available here
-(**TODO: unpublished documentation**)
+More detailed documentation on benchmark configurations is available [here](RUNNER.md)
 
 ## Writing overrides
 
@@ -168,6 +187,10 @@ Generally, you can execute the command
 python benchmark.py -C -b <suites to execute> -c <benchmarks to execute> --env-path envs/*.yml --overrides-path path/to/overrides/*.yaml --run-id 'descriptive_title_of_runs'
 ```
 
+`-b` requires a space-separated list of names of benchmark configurations
+(which will be pulled from each environment's `$CONDA_PREFIX/benchmarks`)
+or paths to benchmark configurations. `-c` requires a space separated list
+of names of benchmarks within the selected configurations to run.
 If you want to run all benchmark suites or all benchmarks, just omit the
 `-b SUITES` and `-c BENCHMARKS` arguments. If you have no overrides, you can
 omit the overrides-path argument. Be sure to set a descriptive run id.
@@ -177,6 +200,23 @@ its environment configuration directly after `--env-path`.
 
 `benchmark.py` will dump results and metadata for benchmark runs into
 `runs/run_id/...`
+
+## Rerunning benchmarks
+
+If you find that a benchmark did not complete or a result is in error, there
+are generally two ways to redo it:
+1. Run that specific benchmark manually. It is possible to `conda activate`
+   the environments inside `envs/` by simply running `conda activate envs/intelpython3`
+   for example. Then the benchmarks should be manually runnable by executing
+   the command specified in the benchmark yaml file found in `$CONDA_PREFIX/benchmarks`.
+   Before aggregation, replace the files in the `runs/` directory with the new
+   results, or add the new results after aggregation, whichever is more convenient
+   or more possible.
+2. Re-run that specific benchmark using the runner script. If only a single environment
+   is problematic, use `--env-path path/to/env1.yaml path/to/env2.yaml ...`, i.e.
+   pass a space-separated list of environment configuration files after `--env-path`.
+   Use the correct benchmark "suite" name (the name of the benchmark yaml in
+   `$CONDA_PREFIX/benchmarks`
 
 ## Aggregating data
 
@@ -241,4 +281,13 @@ Here is the procedure I followed to run benchmarks for 2020.
 - Unpacked `pkgs` directory from the Linux 3 distribution tarball, created a conda package
   channel from there, and ran `python -m http.server` for serving packages to benchmark machines
 - Started another `python -m http.server` for serving benchmark packages to benchmark machines
+- Set channels in environment configs accordingly
 - Followed above instructions basically
+- Manually gathered environment information (pipe each to a separate file and then `tar -czvf env.tar.gz ...`,
+  and then include in the report):
+  - for each environment, `conda list` to get packages installed by both conda and pip
+  - `lscpu` gets cpu information
+  - `free -h` gets simple ram information
+  - `dmidecode --type 17` gets detailed information on DIMMs
+  - `uname -a` gets kernel identification
+  - `cat /etc/*elease` gets distribution information
