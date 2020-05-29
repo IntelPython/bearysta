@@ -24,7 +24,8 @@ optional arguments:
   -h, --help            show this help message and exit
   --clean, -C           Delete environments before installing packages
   --use-existing-env, -E
-                        Use the current conda environment, install nothing but benchmarks
+                        Do not recreate environments, install nothing but benchmarks
+                        (this is not the same as using the "current" environment)
   --skip-package-listing
                         Skip 'pip freeze' and 'conda list' steps
   --benchmarks BENCHMARKS [BENCHMARKS ...], -b BENCHMARKS [BENCHMARKS ...]
