@@ -189,7 +189,8 @@ class Benchmark:
 
             dropped_any_lines = False
             with tempfile.SpooledTemporaryFile(max_size=2**24, mode='w+') as temp, open(fn) as fd:
-                self.logger.debug("After pre-processing of '%s':" % fn)
+                self.logger.debug("Pre-processing of '%s':" % fn)
+                prev_line = ""
                 for line in fd:
                     drop_line, log_line = True, True
                     for reg, rep in replacements:
@@ -197,20 +198,27 @@ class Benchmark:
                             drop_line, log_line = False, False
                             if rep:
                                 if rep == 'drop':
+                                    self.logger.debug(f'* dropping "{line.strip()}"')
                                     drop_line, log_line = True, False
                                     break
+                                if rep == 'append':
+                                    self.logger.debug(f'* appending "{line.strip()}"')
+                                    drop_line, log_line = True, False
+                                    line = prev_line.rstrip() + ' ' + line.lstrip()  # strip the midpoint to help re match
                                 else:
-                                    # Perform replacement
+                                    self.logger.debug(f'* replacing "{line.strip()}" with "{rep}"')
                                     line = reg.sub(rep, line)
+                                    drop_line = False
                     if drop_line:
                         if log_line:
                             if not dropped_any_lines:
                                 dropped_any_lines = True
                                 self.logger.info("Dropped unexpected lines from '%s':" % fn)
-                            self.logger.info('-' + line.strip())
+                            self.logger.info('- ' + line.strip())
                     else:
                         self.logger.debug('+ ' + line.strip())
                         temp.write(line)
+                    prev_line = line
                 if temp.tell() == 0:
                     if fd.tell() != 0:
                         self.logger.warning("Dropped all lines from '%s':" % fn)
@@ -880,7 +888,7 @@ class Benchmark:
 def main():
 
     parser = argparse.ArgumentParser(description='aggregate benchmarking results')
-    parser.add_argument('--verbose', '-v', default=0, action='count', help='verbosity, -vv for even more')
+    parser.add_argument('--verbose', '-v', default=0, action='count', help='debug logging')
     parser.add_argument('--input', '-i', default=None, nargs='+',
                         help='input files. If specified, the input file glob in the config is ignored.')
     parser.add_argument('config', nargs='+', help='configuration file in YAML format')

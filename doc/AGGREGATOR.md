@@ -52,10 +52,11 @@ option allows adding a header before passing to `pandas.read_csv`.
 Line-by-line filtering is also available for result files that contain
 errors or comments. Each (key, value) pair under `filter` in the `input`
 section is treated as (regex, replacement). A replacement of null (empty)
-means to do nothing, and a replacement of `drop` means to actually drop
-the line (and log it). If the filter section is omitted, no filtering is
-performed. If any filter lines exist, completely unmatched lines will
-be dropped.
+means to do nothing but mark for inclusion. A replacement of `drop` means
+to actually drop the line and do not report that. A replacement of `append`
+concats current line with previous line enabling regex to match across lines.
+If any filter lines exist, completely unmatched lines will be dropped with
+logging. If the filter section is omitted, no filtering is performed.
 
 Once the input section is finished, each parsed file will be converted to
 a pandas dataframe (using `pd.read_csv`) for further processing
