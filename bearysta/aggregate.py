@@ -798,7 +798,7 @@ class Benchmark:
 
 
     def create_excel_pivot_table(self, df, outfile):
-        from .pivot import pivot_table, get_column_formatter
+        from .excel_pivot import pivot_table, get_column_formatter
 
         pivot_formatter = {}
 
