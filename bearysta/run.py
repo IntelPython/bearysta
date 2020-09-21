@@ -3,7 +3,7 @@ import shlex
 from copy import deepcopy
 from functools import reduce
 import itertools
-from subprocess import PIPE
+from subprocess import Popen, PIPE
 import time
 import platform
 try:
@@ -14,12 +14,11 @@ except ImportError:
 yaml = YAML(typ='safe')
 
 
-def run_benchmark(envname, config, run_path='runs', run_id=None, commands=None,
+def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
                   overrides=[], suite='benchmark', dry_run=False, progress="undefined"):
-
     if not run_id:
         run_id = str(time.time())
-    os.makedirs('{}/{}/{}/{}/'.format(run_path, run_id, suite, envname), exist_ok=True)
+    os.makedirs('{}/{}/{}/{}/'.format(run_path, run_id, suite, env.name), exist_ok=True)
 
     with open(config) as f:
         bench = yaml.load(f)
@@ -91,7 +90,7 @@ def run_benchmark(envname, config, run_path='runs', run_id=None, commands=None,
                 print(f'# {k} = {v}')
 
             # add automatically generated variables
-            arg_run['env_name'] = envname
+            arg_run['env_name'] = env.name
             arg_run['hostname'] = platform.node()
 
             data = ''
@@ -103,7 +102,7 @@ def run_benchmark(envname, config, run_path='runs', run_id=None, commands=None,
 
             # output to file
             output_prefix = '{}/{}/{}/{}/{}_{}.out'.format(run_path, run_id, suite,
-                                                       envname, time.time(),
+                                                       env.name, time.time(),
                                                        endpoint)
             with open(output_prefix, 'w') as fd:
                 fd.write(data)
@@ -112,9 +111,32 @@ def run_benchmark(envname, config, run_path='runs', run_id=None, commands=None,
             with open(output_prefix + '.meta', 'w') as fd:
                 yaml.dump(arg_run, fd)
 
+class CurrentEnv:
+    name = "default"
+
+    @classmethod
+    def call(self, cmd, env={}, **kwargs):
+        '''Get a Popen object calling cmd, with kwargs
+        passed directly to the Popen constructor.
+        '''
+        if type(cmd) is str:
+            cmd = [cmd]
+
+        cmd_str = ' '.join('"' + x.replace('"', '"\'"\'"') + '"' if any(c in x for c in list(' "$')) else x for x in cmd)
+        # The previous line quotes each arg if it contains any of (space,
+        # double quote, dollar sign) in double quotes, replacing any inner
+        # double quotes with the sequence "'"'" (closing first quote, starting
+        # single quote, actually writing the double quote, closing single
+        # quote, then restarting the double quote)
+
+        print('#$ ' + cmd_str.replace(' && ', ' && \\\n#> '))
+
+        if 'PATH' not in env:
+            env['PATH'] = os.environ['PATH']
+        return Popen(cmd_str, env=env, shell=True, **kwargs)
+
 
 def main():
-
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--benchmarks', '-b', default=None, nargs='+',
@@ -122,7 +144,7 @@ def main():
     parser.add_argument('--commands', '-c', default=None, nargs='+',
                         help='Run these benchmark commands only')
     parser.add_argument('--bench-path', default=None, nargs='+',
-                        help='Read these benchmark configurations. benchmarks/ is by default'
+                        help='Read these benchmark configurations. benchmarks/ is by default')
     parser.add_argument('--overrides-path', default=[], nargs='+',
                         help='Read these benchmark overrides.')
     parser.add_argument('--run-id', default=time.strftime('%Y-%m-%d_%H_%M_%S'),
@@ -156,14 +178,16 @@ def main():
         benchmarks = [b for b in benchmarks if
                 os.path.splitext(os.path.basename(b))[0] in args.benchmarks]
 
+    env = CurrentEnv()
     nbenches = len(benchmarks)
     for j, f in enumerate(benchmarks):
+        
         bname = os.path.splitext(os.path.basename(f))[0]
         progress_bench = 'benchmark "{}" ({}/{})'.format(bname, j+1, nbenches)
         print('#### Running', progress_bench)
         # Run benchmark
-        apply_overrides = [o for o in overrides if (bname in o['override']['benchmark']]
-        run_benchmark(env.name, f, run_id=args.run_id, commands=args.commands,
+        apply_overrides = [o for o in overrides if (bname in o['override']['benchmark'])]
+        run_benchmark(env, f, run_id=args.run_id, commands=args.commands,
                         run_path=args.run_path, overrides=apply_overrides,
                         suite=bname, dry_run=args.dry_run, progress=progress_bench)
     return args.dry_run  # mark the build failed in CI because no meaningful result was produced
