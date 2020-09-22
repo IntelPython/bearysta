@@ -119,7 +119,7 @@ class CurrentEnv:
         '''Get a Popen object calling cmd, with kwargs
         passed directly to the Popen constructor.
         '''
-        if type(cmd) is str:
+        if isinstance(cmd, str):
             cmd = [cmd]
 
         cmd_str = ' '.join('"' + x.replace('"', '"\'"\'"') + '"' if any(c in x for c in list(' "$')) else x for x in cmd)
