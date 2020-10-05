@@ -305,6 +305,20 @@ class Benchmark:
         # Rename columns with the given dict
         if self['rename'] is not None:
             df.columns = df.columns.map(lambda x: self['rename'][x] if x in self['rename'] else x)
+        # Rename columns values with the given csv file. Pass rename_col_values parameter in the config file as follows
+        # rename_col_values:
+        #     - col_name: col_values_conversion.csv (csv file with columns values conversions - first column with current
+        # values, the second column with new values)
+        if self['rename_col_values'] is not None:
+            # after conversion from yaml, self['rename_col_values'] looks like [{"col1": "csv1.csv"}, {"col2": "csv2.csv"}],
+            # so to simplify values conversion, separate dicts are combined to single dict
+            replacements = {key: value for col_replacement in self['rename_col_values'] for key, value in col_replacement.items()}
+            for col_name, replacement in replacements.items():
+                assert isinstance(replacement, str), "column replacements values should be passed in single file"
+                assert os.path.splitext(replacement)[1] == ".csv", "column replacements values should be passed in csv format"
+                assert col_name in df.columns, "column name should be in the DataFrame columns list"
+                rename_values = pd.read_csv(replacement, header=None, index_col=0).squeeze().to_dict()
+                df[col_name] = df[col_name].map(lambda x: rename_values[x] if x in rename_values else x)
         self.logger.debug('After renaming:\n'+str(df))
 
         # Filter out values
