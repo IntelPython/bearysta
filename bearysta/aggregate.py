@@ -454,11 +454,11 @@ class Benchmark:
                     if 'row[' in func:
                         # Execute this as a row function
                         # Evaluate the lambda function on the df, passing in our locals
-                        result = df.apply(eval('lambda row:'+func, locals()), axis=1)
+                        result = df.apply(eval('lambda row:'+func, {"pd": pd}, locals()), axis=1)
 
                     else:
                         # Execute this as a dataframe function
-                        result = eval('lambda df: '+func, locals())(df)
+                        result = eval('lambda df: '+func, {"pd": pd}, locals())(df)
                 except KeyError as e:
                     raise BenchmarkError('Row or column index "%s" specified for precomputed '
                                          'columns not found' % (e.args[0],))
