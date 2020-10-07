@@ -106,6 +106,8 @@ class Benchmark:
         if 'axis' not in self.config:
             self.config['axis'] = []
 
+        # cache for read_csv_cached function
+        self.cached_csvs = {}
 
 
     def write_config(self, config_path):
@@ -282,6 +284,13 @@ class Benchmark:
 
         return pd.read_csv(fd, **read_csv_params)
 
+    def read_csv_cached(self, filepath_or_buffer, *args, **kwargs):
+
+        csv_name = os.path.abspath(filepath_or_buffer) if os.path.isfile(filepath_or_buffer) else filepath_or_buffer
+        if csv_name not in self.cached_csvs:
+            self.cached_csvs[csv_name] = pd.read_csv(csv_name, *args, **kwargs)
+
+        return self.cached_csvs[csv_name]
 
     def get_normalized_data(self, df=None, inputs=None, **kwargs):
         '''Get a pandas DataFrame containing normalized data for this benchmark.
@@ -450,7 +459,7 @@ class Benchmark:
 
                 func = self['precomputed'][col]
                 eval_globals = dict(locals())
-                eval_globals.update({"pd": pd})
+                eval_globals.update({"pd": pd, "read_csv": self.read_csv_cached})
 
                 try:
                     if 'row[' in func:
