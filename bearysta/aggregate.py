@@ -449,16 +449,17 @@ class Benchmark:
             for col in self['precomputed']:
 
                 func = self['precomputed'][col]
+                eval_globals = dict(locals())
+                eval_globals.update({"pd": pd})
 
                 try:
                     if 'row[' in func:
                         # Execute this as a row function
                         # Evaluate the lambda function on the df, passing in our locals
-                        result = df.apply(eval('lambda row:'+func, {"pd": pd}, locals()), axis=1)
-
+                        result = df.apply(eval('lambda row:'+func, eval_globals), axis=1)
                     else:
                         # Execute this as a dataframe function
-                        result = eval('lambda df: '+func, {"pd": pd}, locals())(df)
+                        result = eval('lambda df: '+func, eval_globals)(df)
                 except KeyError as e:
                     raise BenchmarkError('Row or column index "%s" specified for precomputed '
                                          'columns not found' % (e.args[0],))
