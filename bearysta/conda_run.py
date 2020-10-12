@@ -9,10 +9,7 @@ from subprocess import PIPE
 import time
 import re
 import platform
-try:
-    from ruamel.yaml import YAML
-except ImportError:
-    from ruamel_yaml import YAML
+
 from .run import run_benchmark, yaml
 
 
