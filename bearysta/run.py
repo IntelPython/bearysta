@@ -105,7 +105,7 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
                     a.update(arg_run)
                     p = run_process(v, env=a, capture_output=True, shell=True)
                     if p.returncode:
-                        print(f'# Error {p.returncode} returned while running: "', v, '", stderr:', p.stderr.decode(), "...env:", a)
+                        print(f'# Error {p.returncode} returned while running: "{v}", stderr: {p.stderr.decode()} ...env: {a}')
                         sys.exit(2)
                     v = arg_run[k] = p.stdout.decode().strip()
                 print(f'# {k} = {v}')
