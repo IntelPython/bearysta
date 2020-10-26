@@ -147,9 +147,9 @@ class CurrentEnv:
 
         env = env.copy()
         if 'PATH' not in env:
-            env['PATH'] = os.environ['PATH']
+            env['PATH'] = os.getenv('PATH', '')
         if 'LD_LIBRARY_PATH' not in env:
-            env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
+            env['LD_LIBRARY_PATH'] = os.getenv('LD_LIBRARY_PATH', '')
         return Popen(cmd_str, env=env, shell=True, **kwargs)
 
 
