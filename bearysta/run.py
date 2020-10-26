@@ -1,9 +1,11 @@
 import os
+import sys
 import shlex
 from copy import deepcopy
 from functools import reduce
 import itertools
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, run as run_process
+import glob
 import time
 import platform
 try:
@@ -85,13 +87,29 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
         product_length = reduce(lambda x, y: x * len(y), vals, 1)
         for i, values in enumerate(itertools.product(*vals)):
             print('## Running combination {}/{} of {}' .format(i+1, product_length, progress_inside))
+            # output to file
+            output_prefix = '{}/{}/{}/{}/{}_{}'.format(run_path, run_id, suite,
+                                                env.name, time.time(), endpoint)
             arg_run = dict(zip(keys, values))
-            for k, v in arg_run.items():
-                print(f'# {k} = {v}')
-
+            # a copy of visible variables
+            args = arg_run.copy()
             # add automatically generated variables
             arg_run['env_name'] = env.name
             arg_run['hostname'] = platform.node()
+            arg_run['outprefix'] = output_prefix
+
+            for k, v in args.items():
+                if v.startswith('$(') and v[-1] == ')':  # shell precomputed variables
+                    v = v[2:-1]
+                    a = os.environ.copy()
+                    a.update(arg_run)
+                    p = run_process(v, env=a, capture_output=True, shell=True)
+                    if p.returncode:
+                        print(f'# Error {p.returncode} returned while running: "{v}", stderr: {p.stderr.decode()} ...env: {a}')
+                        sys.exit(2)
+                    v = arg_run[k] = p.stdout.decode().strip()
+                print(f'# {k} = {v}')
+            del args  # used for vars dump only
 
             data = ''
             with env.call(cmd, env=arg_run, stdout=PIPE) as proc:
@@ -100,15 +118,11 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
                     print(line.decode(), end='')
             print("")
 
-            # output to file
-            output_prefix = '{}/{}/{}/{}/{}_{}.out'.format(run_path, run_id, suite,
-                                                       env.name, time.time(),
-                                                       endpoint)
-            with open(output_prefix, 'w') as fd:
+            with open(output_prefix + '.out', 'w') as fd:
                 fd.write(data)
 
             # output the environment we created as well.
-            with open(output_prefix + '.meta', 'w') as fd:
+            with open(output_prefix + '.out.meta', 'w') as fd:
                 yaml.dump(arg_run, fd)
 
 class CurrentEnv:
@@ -131,8 +145,11 @@ class CurrentEnv:
 
         print('#$ ' + cmd_str.replace(' && ', ' && \\\n#> '))
 
+        env = env.copy()
         if 'PATH' not in env:
             env['PATH'] = os.environ['PATH']
+        if 'LD_LIBRARY_PATH' not in env:
+            env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
         return Popen(cmd_str, env=env, shell=True, **kwargs)
 
 
@@ -181,7 +198,7 @@ def main():
     env = CurrentEnv()
     nbenches = len(benchmarks)
     for j, f in enumerate(benchmarks):
-        
+
         bname = os.path.splitext(os.path.basename(f))[0]
         progress_bench = 'benchmark "{}" ({}/{})'.format(bname, j+1, nbenches)
         print('#### Running', progress_bench)
@@ -194,5 +211,4 @@ def main():
 
 
 if __name__ == '__main__':
-     import sys
      sys.exit(main())
