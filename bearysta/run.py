@@ -126,7 +126,7 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
                 yaml.dump(arg_run, fd)
 
 class CurrentEnv:
-    name = "default"
+    name = platform.node()
 
     @classmethod
     def call(self, cmd, env={}, **kwargs):
