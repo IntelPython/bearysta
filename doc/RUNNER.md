@@ -104,7 +104,9 @@ in `$CONDA_PREFIX/benchmarks/`. Each config defines global environment variables
 and local variables. Command lines can thus contain parameter substitution.
 
 We use the Cartesian product of all variables defined for a particular command (where local variables override
-global ones) to run it with all combinations of variables.
+global ones) to run it with all combinations of variables. The command output is captured in "$outprefix.out"
+file while the set of current variables for the given run is stored in "$outprefix.out.meta" file (it can be
+overrided via `meta-suffix` configuration.
 
 For example, for ibench_native, one may write:
 
@@ -112,6 +114,8 @@ For example, for ibench_native, one may write:
 variables:
   bench: [det_native, dot_native, inv_native, lu_native]
   size: [test, tiny, small, large]
+
+meta-suffix: .out
 
 commands:
   ibench_native: IBENCH_PLUGINS=ibench_native python -m ibench run --benchmarks $bench --size $size --runs 10
@@ -140,6 +144,7 @@ automatically be overridden by the benchmarking system.
 
 - `env_name`: the name given in the environment configuration.
 - `hostname`: the name of the machine, as given by `platform.node()`
+- `outprefix`: path and name of the the command's output capture file
 
 ### Config overrides
 A user can override any aspect of benchmark configurations without directly editing any, by simply creating override configurations inside the `overrides/` directory, ending in `.yaml`. For example, the following could work to disable sequential mode for scikit-learn python benchmarks, and restrict the kmeans size to the given one:
