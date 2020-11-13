@@ -25,6 +25,9 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
     with open(config) as f:
         bench = yaml.load(f)
 
+    # Specify suffix for meta file of run configuration. E.g. '.csv' if $outprefix.csv is the consumable command output.
+    meta_suff = bench.get('meta-suffix', '.out')
+
     # Make sure we at least have an empty vars list
     if 'variables' not in bench:
         bench['variables'] = {}
@@ -122,7 +125,7 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
                 fd.write(data)
 
             # output the environment we created as well.
-            with open(output_prefix + '.out.meta', 'w') as fd:
+            with open(output_prefix + meta_suff + '.meta', 'w') as fd:
                 yaml.dump(arg_run, fd)
 
 class CurrentEnv:
@@ -157,7 +160,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--benchmarks', '-b', default=None, nargs='+',
-                        help='Run specified benchmarks names only')
+                        help='Run specified benchmark names only')
     parser.add_argument('--commands', '-c', default=None, nargs='+',
                         help='Run these benchmark commands only')
     parser.add_argument('--bench-path', default=None, nargs='+',
