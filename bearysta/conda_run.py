@@ -10,7 +10,7 @@ import time
 import re
 import platform
 
-from .run import run_benchmark, yaml
+from run import run_benchmark, yaml
 
 
 def setup_environments(env_metas, **kwargs):
