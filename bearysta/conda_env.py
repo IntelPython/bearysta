@@ -326,7 +326,7 @@ class CondaEnv:
                 found_pip = True
 
         if found_pip:
-            info_cmd = ['pip', 'freeze', '--quiet', '--local']
+            info_cmd = ['pip', 'list', '--format=freeze', '--local']
             pip_list = self.call_stdout(info_cmd).split()
             pip_list = [s.split('==') for s in pip_list]
 
