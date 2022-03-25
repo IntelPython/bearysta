@@ -98,7 +98,7 @@ def main():
             print('#### Running', progress_bench)
             # Run benchmark
             apply_overrides = [o for o in overrides if (bname in o['override']['benchmark'] and env.name in o['override']['envs'])]
-            run.run_benchmark(env.name, f, run_id=args.run_id, commands=args.commands,
+            run.run_benchmark(env, f, run_id=args.run_id, commands=args.commands,
                           run_path=args.run_path, overrides=apply_overrides,
                           suite=bname, dry_run=args.dry_run, progress=progress_bench)
     return args.dry_run  # mark the build failed in CI because no meaningful result was produced
