@@ -1,25 +1,17 @@
 import glob
 import os
-import shlex
-from copy import deepcopy
-from collections import namedtuple
-from functools import reduce
-import itertools
-from subprocess import PIPE
 import time
-import re
-import platform
 
-from .run import run_benchmark, yaml
+import run
 
 
 def setup_environments(env_metas, **kwargs):
-    from .conda_env import CondaEnv
+    import conda_env
     envs = []
     nenvs = len(env_metas)
     for i, f in enumerate(env_metas):
         print('# Creating environment "{}" ({}/{})'.format(f, i+1, nenvs))
-        envs.append(CondaEnv(f, **kwargs))
+        envs.append(conda_env.CondaEnv(f, **kwargs))
 
     return envs
 
@@ -72,7 +64,7 @@ def main():
     overrides = []
     for f in args.overrides_path:
         with open(f) as fd:
-            o = yaml.load(fd)
+            o = run.yaml.load(fd)
         if 'override' not in o:
             print('# WARNING: ignoring invalid override at {}'.format(f))
             continue
@@ -106,7 +98,7 @@ def main():
             print('#### Running', progress_bench)
             # Run benchmark
             apply_overrides = [o for o in overrides if (bname in o['override']['benchmark'] and env.name in o['override']['envs'])]
-            run_benchmark(env.name, f, run_id=args.run_id, commands=args.commands,
+            run.run_benchmark(env, f, run_id=args.run_id, commands=args.commands,
                           run_path=args.run_path, overrides=apply_overrides,
                           suite=bname, dry_run=args.dry_run, progress=progress_bench)
     return args.dry_run  # mark the build failed in CI because no meaningful result was produced
