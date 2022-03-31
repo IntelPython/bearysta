@@ -82,7 +82,7 @@ class Benchmark:
 
                 self.logger.info('Reading config at '+ config)
                 bench = Benchmark(config)
-                df = bench.get_aggregated_data()
+                df = bench.get_normalized_data()
                 # overwrite existing values inherited from data loading
                 df[self.input_column] = os.path.splitext(os.path.basename(config))[0]
                 self.logger.debug('Imported dataframe:')
@@ -723,7 +723,7 @@ class Benchmark:
             indices += (col > b)
         indices[col.isnull()] = -1
         indices = indices.astype('int64')
-
+        
         return ['background-color: ' + (colors[i] if i != -1 else '#ffffff') for i in indices]
 
     def create_html_pivot_table(self, df, f, plot=False):
@@ -769,7 +769,7 @@ class Benchmark:
                     f.write('<img src="data:image/png;base64,{}" /><br>\n'.format(b64))
 
 
-    def create_pandas_pivot_table(self, df, excel=None):
+    def create_pandas_pivot_table(self, df, excel=None, raw=False):
         '''Return a pivot table created from df, and
         outputs it with conditional formatting to the given
         Excel spreadsheet, if not None.
@@ -799,16 +799,25 @@ class Benchmark:
                                         'variant {}'.format(variant))
                     continue
 
-                pt.to_excel(writer, sheet_name='summary', startrow=position)
+                if self['indicator'] is not None:
+                    for col in self['indicator']:
+                        ss = pt.style.apply(self.format_column, boundaries=col['ranges'], colors=col['colors'], subset=col['column'])
+                else:
+                    ss = pt
+
+                ss.to_excel(writer, sheet_name='summary', startrow=position)
                 position += len(pt) + df.columns.nlevels + len(self['values']) + 4
 
             df.to_excel(writer, sheet_name='data')
-
+            if raw:
+              rdf=pd.concat(self.dataframes, ignore_index=True, sort=True)
+              rdf.to_excel(writer, sheet_name='raw')
+            
             writer.save()
 
 
     def create_excel_pivot_table(self, df, outfile):
-        from .excel_pivot import pivot_table, get_column_formatter
+        import excel_pivot
 
         pivot_formatter = {}
 
@@ -923,6 +932,8 @@ def main():
                         help='Output tables to HTML with pd.DataFrame.to_html')
     parser.add_argument('--plot', default=False, action='store_true',
                         help='Add plots to HTML')
+    parser.add_argument('--raw', default=False, action='store_true', help='Add excel sheet with raw data. '
+                                                                      'Ignored if --excel is not specified')    
 
     args = parser.parse_args()
 
@@ -985,7 +996,7 @@ def main():
         if args.excel_pivot_table is not None:
             if args.excel is not None:
                 if args.excel_pivot_table == 'pandas':
-                    bench.create_pandas_pivot_table(df, args.excel)
+                    bench.create_pandas_pivot_table(df, args.excel, raw=args.raw)
                 elif args.excel_pivot_table == 'excel':
                     bench.create_excel_pivot_table(df, args.excel)
         elif args.excel is not None:
