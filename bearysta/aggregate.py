@@ -788,22 +788,22 @@ class Benchmark:
                 varindex.to_excel(writer, 'summary', startrow=position, index=False)
                 position += len(varindex) + 2
 
-                temp_pt = group.pivot_table(values=self['values'],
+                pt = group.pivot_table(values=self['values'],
                                        index=self['axis'],
                                        columns=self['series'],
                                        aggfunc=self['aggregation'])
 
-                if temp_pt.size == 0:
+                if pt.size == 0:
                     self.logger.warning('Skipping pivot table of length zero, for '
                                         'variant {}'.format(variant))
                     continue
                 
-                pt = temp_pt
+                styler = pt
                 if self['indicator']:
                     for col in self['indicator']:
-                        pt = temp_pt.style.apply(self.format_column, boundaries=col['ranges'], colors=col['colors'], subset=col['column'])
+                        styler = pt.style.apply(self.format_column, boundaries=col['ranges'], colors=col['colors'], subset=col['column'])
 
-                pt.to_excel(writer, sheet_name='summary', startrow=position)
+                styler.to_excel(writer, sheet_name='summary', startrow=position)
                 position += len(pt) + df.columns.nlevels + len(self['values']) + 4
 
             df.to_excel(writer, sheet_name='data')
