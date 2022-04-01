@@ -723,7 +723,6 @@ class Benchmark:
             indices += (col > b)
         indices[col.isnull()] = -1
         indices = indices.astype('int64')
-        
         return ['background-color: ' + (colors[i] if i != -1 else '#ffffff') for i in indices]
 
     def create_html_pivot_table(self, df, f, plot=False):
@@ -789,29 +788,28 @@ class Benchmark:
                 varindex.to_excel(writer, 'summary', startrow=position, index=False)
                 position += len(varindex) + 2
 
-                pt = group.pivot_table(values=self['values'],
+                temp_pt = group.pivot_table(values=self['values'],
                                        index=self['axis'],
                                        columns=self['series'],
                                        aggfunc=self['aggregation'])
 
-                if pt.size == 0:
+                if temp_pt.size == 0:
                     self.logger.warning('Skipping pivot table of length zero, for '
                                         'variant {}'.format(variant))
                     continue
-
-                if self['indicator'] is not None:
+                
+                pt = temp_pt
+                if self['indicator']:
                     for col in self['indicator']:
-                        ss = pt.style.apply(self.format_column, boundaries=col['ranges'], colors=col['colors'], subset=col['column'])
-                else:
-                    ss = pt
+                        pt = temp_pt.style.apply(self.format_column, boundaries=col['ranges'], colors=col['colors'], subset=col['column'])
 
-                ss.to_excel(writer, sheet_name='summary', startrow=position)
+                pt.to_excel(writer, sheet_name='summary', startrow=position)
                 position += len(pt) + df.columns.nlevels + len(self['values']) + 4
 
             df.to_excel(writer, sheet_name='data')
             if raw:
-              rdf=pd.concat(self.dataframes, ignore_index=True, sort=True)
-              rdf.to_excel(writer, sheet_name='raw')
+                rdf=pd.concat(self.dataframes, ignore_index=True, sort=True)
+                rdf.to_excel(writer, sheet_name='raw')
             
             writer.save()
 
