@@ -101,6 +101,7 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
             arg_run['hostname'] = platform.node()
             arg_run['outprefix'] = output_prefix
 
+            cmd_reduced = cmd.copy()
             for k, v in args.items():
                 if v.startswith('$(') and v[-1] == ')':  # shell precomputed variables
                     v = v[2:-1]
@@ -112,10 +113,12 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
                         sys.exit(2)
                     v = arg_run[k] = p.stdout.decode().strip()
                 print(f'# {k} = {v}')
+                if v == "":
+                    cmd_reduced.remove(f'${k}')
             del args  # used for vars dump only
 
             data = ''
-            with env.call(cmd, env=arg_run, stdout=PIPE) as proc:
+            with env.call(cmd_reduced, env=arg_run, stdout=PIPE) as proc:
                 for line in iter(proc.stdout.readline, b''):
                     data += line.decode()
                     print(line.decode(), end='')
