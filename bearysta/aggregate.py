@@ -850,9 +850,8 @@ class Benchmark:
                 dfs.append(df)
 
             # output env data to excel
-            root_df = dfs[0]
-            for df in dfs[1:]:
-                root_df = root_df.join(df, how='outer')
+            root_df = dfs[0].join(dfs[1:], how='outer')
+            root_df.sort_index()
             root_df.to_excel(writer, sheet_name='env')
 
             # write excel sheet to disk
