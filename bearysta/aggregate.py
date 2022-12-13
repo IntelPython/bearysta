@@ -7,6 +7,7 @@ import sys
 import glob
 import tempfile
 import pkg_resources
+import re
 try:
     from ruamel.yaml import YAML
 except ImportError:
@@ -811,8 +812,50 @@ class Benchmark:
                 rdf=pd.concat(self.dataframes, ignore_index=True, sort=True)
                 rdf.to_excel(writer, sheet_name='raw')
             
-            writer.save()
+            # gather environment content
+            # TODO - there has to be a better way of grabbing the raw config
+            raw_config_glob = self.config['input']['config'][0]
+            raw_config_path = re.sub(r'\/config\/.*\.yml', f'/config/{raw_config_glob}', self.config_path)
+            raw_config = yaml.load(open(raw_config_path))
+            output_glob = raw_config['input']['packages_path']
 
+            # grab _packages.yml files from output_glob path
+            package_files = glob.glob(output_glob)
+
+            # grab environment data, output to sheet
+            envs = set()
+            for pfile in package_files:
+                # extract environment name
+                # file format: timestamp_name_env_env_packages.yml
+                envs.add(pfile.split('_')[-2])
+
+            # TODO - diff all package yamls, validate consistency across suites
+
+            dfs = []
+            for env in envs:
+                # grab first matching env package file
+                package_file = next(pfile for pfile in package_files if env in pfile)
+                env_data = yaml.load(open(package_file))
+
+                # collect fields for each dict entry (remove name)
+                fields = list(env_data[next(iter(env_data))].keys())
+                fields.remove('name')
+
+                # store package data into dataframe
+                df = pd.DataFrame.from_dict(env_data, orient='index')
+                df = df.set_index('name')
+                df.columns = pd.MultiIndex.from_product(
+                [[env], fields]
+                )
+                dfs.append(df)
+
+            # output env data to excel
+            root_df = dfs[0].join(dfs[1:], how='outer')
+            root_df.sort_index()
+            root_df.to_excel(writer, sheet_name='env')
+
+            # write excel sheet to disk
+            writer.close()
 
     def create_excel_pivot_table(self, df, outfile):
         import excel_pivot
@@ -903,7 +946,6 @@ class Benchmark:
 
 
 def main():
-
     parser = argparse.ArgumentParser(description='aggregate benchmarking results')
     parser.add_argument('--verbose', '-v', default=0, action='count', help='debug logging')
     parser.add_argument('--input', '-i', default=None, nargs='+',
