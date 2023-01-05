@@ -175,6 +175,13 @@ class Benchmark:
 
     def read(self, fn):
 
+        read_funcs = {
+                'csv': self.read_csv,
+                'sql': self.read_sql
+        }
+        return read_funcs[self['input']['format']](fn)
+
+    def read_csv(self, fn):
         # Perform filtering. The way this works is:
         # - if no filter key exists, use all lines
         # - if a filter key exists, for each (key, value) pair in the dict,
@@ -230,14 +237,14 @@ class Benchmark:
                     df = pd.DataFrame()
                 else:
                     temp.seek(0)
-                    df = self.read_fd(temp)
+                    df = self.read_csv_fd(temp)
                     self.logger.debug('Raw data after pre-processing:\n'+str(df))
             #if dropped_any_lines: TODO: print once after all the read calls for each file
             #    self.logger.info('## End of dropped lines')
         else:
             with open(fn) as fd:
                 try:
-                    df = self.read_fd(fd)
+                    df = self.read_csv_fd(fd)
                 except Exception as e:
                     if fd.tell() == 0:
                         self.logger.warning("Input file is empty '%s':" % fn)
@@ -264,15 +271,7 @@ class Benchmark:
 
         return df
 
-
-    def read_fd(self, fd, **kwargs):
-        read_funcs = {
-                'csv': self.read_csv
-        }
-        return read_funcs[self['input']['format']](fd, **kwargs)
-
-
-    def read_csv(self, fd, **kwargs):
+    def read_csv_fd(self, fd, **kwargs):
         read_csv_params = dict(skipinitialspace=True)
 
         # Check if header is present
@@ -283,7 +282,7 @@ class Benchmark:
                 read_csv_params.update(dict(header=None, names=[x.strip() for x in header.split(',')]))
             fd.seek(0)
 
-        return pd.read_csv(fd, **read_csv_params)
+        return pd.read_csv(fd, **read_csv_params, **kwargs)
 
     def read_csv_cached(self, filepath_or_buffer, *args, **kwargs):
 
@@ -292,6 +291,27 @@ class Benchmark:
             self.cached_csvs[csv_name] = pd.read_csv(csv_name, *args, **kwargs)
 
         return self.cached_csvs[csv_name]
+
+    def read_sql_fd(self, fd):
+        if 'table-name' in self['input']:
+            table = self['input']['table-name']
+            self.logger.debug('read_sql_fd: opening table name - %s for reading...' % table)
+            import sqlite3
+            db = sqlite3.connect(fd)
+            query = db.execute(f"SELECT * From {table}")
+            cols = [column[0] for column in query.description]
+            return pd.DataFrame.from_records(data = query.fetchall(), columns = cols)
+        else:
+            self.logger.warning("Table name in SQL database is not specified")
+            return pd.DataFrame()
+
+    def read_sql(self, fn):
+        df = self.read_sql_fd(fn)
+        # Add file, directory, path...
+        df['Path'] = fn
+        df['File'] = os.path.basename(fn)
+        df['Directory'] = os.path.dirname(fn) or '.'
+        return df
 
     def get_normalized_data(self, df=None, inputs=None, **kwargs):
         '''Get a pandas DataFrame containing normalized data for this benchmark.
@@ -460,7 +480,7 @@ class Benchmark:
 
                 func = self['precomputed'][col]
                 eval_globals = dict(locals())
-                eval_globals.update({"pd": pd, "read_csv": self.read_csv_cached})
+                eval_globals.update({"pd": pd, "read_csv_fd": self.read_csv_cached})
 
                 try:
                     if 'row[' in func:
