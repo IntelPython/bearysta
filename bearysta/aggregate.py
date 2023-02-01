@@ -869,13 +869,14 @@ class Benchmark:
                 )
                 dfs.append(df)
 
-            # output env data to excel
-            root_df = dfs[0].join(dfs[1:], how='outer')
-            root_df.sort_index()
-            root_df.to_excel(writer, sheet_name='env')
+            if dfs:
+                # output env data to excel
+                root_df = dfs[0].join(dfs[1:], how='outer')
+                root_df.sort_index()
+                root_df.to_excel(writer, sheet_name='env')
 
-            # write excel sheet to disk
-            writer.close()
+                # write excel sheet to disk
+                writer.close()
 
     def create_excel_pivot_table(self, df, outfile):
         import excel_pivot
