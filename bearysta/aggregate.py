@@ -834,13 +834,12 @@ class Benchmark:
             
             # gather environment content
             # TODO - there has to be a better way of grabbing the raw config
-            raw_config_glob = self.config['input']['config'][0]
-            raw_config_path = re.sub(r'\/config\/.*\.yml', f'/config/{raw_config_glob}', self.config_path)
-            raw_config = yaml.load(open(raw_config_path))
-            output_glob = raw_config['input']['packages_path']
-
-            # grab _packages.yml files from output_glob path
-            package_files = glob.glob(output_glob)
+            package_files = []
+            for raw_config_glob in self.config['input']['config']:
+                raw_config_path = re.sub(r'\/config\/.*\.yml', f'/config/{raw_config_glob}', self.config_path)
+                raw_config = yaml.load(open(raw_config_path))
+                output_glob = raw_config['input']['packages_path']
+                package_files.extend(glob.glob(output_glob))
 
             # grab environment data, output to sheet
             envs = set()
