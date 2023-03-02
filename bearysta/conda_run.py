@@ -23,8 +23,9 @@ def main():
     parser.add_argument('--clean', '-C', action='store_true', default=False,
                         help="Delete environments before installing packages")
     parser.add_argument('--use-existing-env', '-E', action='store_true', default=False,
-                        help="Do not modify environments, install nothing but benchmarks."
-                             "(this is not the same as using the 'current' environment!)")
+                        help="Do not modify environments, just execute benchmarks there."
+                             "(Envs must contain all required benchmark packages and their dependencies"
+                             "If benchmarks are not installed then use --clean False")
     parser.add_argument('--skip-package-listing', action='store_true', default=False,
                         help="Skip 'pip freeze' and 'conda list' steps")
     parser.add_argument('--benchmarks', '-b', default=None, nargs='+',
@@ -57,7 +58,7 @@ def main():
     args = parser.parse_args()
 
     print('###### Preparing environments... ######\n')
-    env_kwargs = dict(clobber=args.clean, skip_listing=args.skip_package_listing)
+    env_kwargs = dict(clobber=args.clean, skip_listing=args.skip_package_listing, existing_env=args.use_existing_env)
 
     envs = setup_environments(args.env_path, **env_kwargs)
 
