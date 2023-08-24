@@ -58,7 +58,7 @@ def main():
     args = parser.parse_args()
 
     print('###### Preparing environments... ######\n')
-    env_kwargs = dict(clobber=args.clean, skip_listing=args.skip_package_listing, existing_env=args.use_existing_env, prefix=args.run_path)
+    env_kwargs = dict(clobber=args.clean, skip_listing=args.skip_package_listing, existing_env=args.use_existing_env, run_path=args.run_path)
 
     envs = setup_environments(args.env_path, **env_kwargs)
 

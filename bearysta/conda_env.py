@@ -26,7 +26,7 @@ class CondaEnv:
 
 
     def __init__(self, fn=None, prefix=None, clobber=False,
-                 skip_listing=False, existing_env=False):
+                 skip_listing=False, existing_env=False, run_path='runs'):
         '''Create or reference an existing environment with the given prefix.
         If an environment already exists at the given or implied prefix,
         the specified packages will be installed.
@@ -47,7 +47,7 @@ class CondaEnv:
             use an existing environment at the given prefix.
         prefix : str, optional
             The prefix for the conda environment. If not specified, we will
-            use ./envs/<name>.
+            use <run_path>/envs/<name>.
         clobber : bool, optional (default False)
             if True, destroy the current environment if any exists.
             This prevents weird things like updating certain packages
@@ -57,6 +57,9 @@ class CondaEnv:
         existing_env: bool, optional (default False)
             if True, use existing env. 
             Do not install anything, but just execute benchmarks
+        run_path: (Default ./runs)
+            Directory where conda envs to be created, i.e. <run_path>/envs/
+            
         '''
 
         if fn is None and prefix is None:
@@ -71,7 +74,7 @@ class CondaEnv:
         if prefix is None:
             self.prefix = os.path.join(os.getcwd(), 'envs', self.name)
         else:
-            self.prefix = prefix
+            self.prefix = os.path.join(run_path, 'envs', self.name)
 
         self.base_prefix = self.get_base_prefix()
 
