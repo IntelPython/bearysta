@@ -2,7 +2,6 @@ from subprocess import Popen, PIPE
 import os
 import json
 import platform
-import shutil # python 3.3+
 import shlex # python 3.3+ for shlex.quote
 import tempfile
 import re
@@ -57,7 +56,7 @@ class CondaEnv:
         existing_env: bool, optional (default False)
             if True, use existing env. 
             Do not install anything, but just execute benchmarks
-        run_path: (Default ./runs)
+        run_path: (Default runs)
             Directory where conda envs to be created, i.e. <run_path>/envs/
             
         '''
@@ -72,9 +71,9 @@ class CondaEnv:
 
         # Deduce prefix from the env config if it wasn't given.
         if prefix is None:
-            self.prefix = os.path.join(os.getcwd(), 'envs', self.name)
+            self.prefix = os.path.join(os.path.abspath(run_path), 'envs', self.name)
         else:
-            self.prefix = os.path.join(run_path, 'envs', self.name)
+            self.prefix = prefix
 
         self.base_prefix = self.get_base_prefix()
 
