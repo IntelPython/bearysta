@@ -34,11 +34,11 @@ def main():
                         help='Run these benchmark commands')
     parser.add_argument('--env-path', default=glob.glob('envs/*.yml'), nargs='+',
                         help='Read these environment configurations')
-    parser.add_argument('--bench-path', default=None, nargs='+',
-                        help='Read these benchmark configurations. '
+    parser.add_argument('--bench-path', default=None,
+                        help='Path to a folder with benchmark configurations. '
                         'If left unspecified, benchmark configurations will be '
                         'read from $CONDA_PREFIX/benchmarks for each env.')
-    parser.add_argument('--overrides-path', default=[], nargs='+',
+    parser.add_argument('--overrides-path', default=None,
                         help='Read these benchmark overrides.')
     parser.add_argument('--run-id', default=time.strftime('%Y-%m-%d_%H_%M_%S'),
                         help='Directory under the run path where outputs will go')
@@ -63,18 +63,20 @@ def main():
     envs = setup_environments(args.env_path, **env_kwargs)
 
     overrides = []
-    for f in args.overrides_path:
-        with open(f) as fd:
-            o = run.yaml.load(fd)
-        if 'override' not in o:
-            print('# WARNING: ignoring invalid override at {}'.format(f))
-            continue
-        for k, v in o['override'].items():
-            if type(v) is str:
-                o['override'][k] = [v]
+    if args.overrides_path:
+        override_configs = glob.glob(os.path.join(os.path.abspath(args.overrides_path), '*.yaml'))
+        for f in override_configs:
+            with open(f) as fd:
+                o = run.yaml.load(fd)
+            if 'override' not in o:
+                print('# WARNING: ignoring invalid override at {}'.format(f))
+                continue
+            for k, v in o['override'].items():
+                if type(v) is str:
+                    o['override'][k] = [v]
 
-        o['override']['envs'] = o['override'].get('envs', [e.name for e in envs])
-        overrides.append(o)
+            o['override']['envs'] = o['override'].get('envs', [e.name for e in envs])
+            overrides.append(o)
 
     print('\n###### Running benchmarks... #######')
     nenvs = len(envs)
@@ -83,7 +85,7 @@ def main():
         print('##### Selected', progress_env)
         # Get benchmark yamls
         if args.bench_path:
-            benchmarks = args.bench_path
+            benchmarks = glob.glob(os.path.join(os.path.abspath(args.bench_path), '*.yaml'))
         else:
             benchmarks = glob.glob(os.path.join(env.prefix, 'benchmarks', '*.yaml'))
 
