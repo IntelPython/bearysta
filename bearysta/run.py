@@ -131,9 +131,6 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
             with open(output_prefix + meta_suff + '.meta', 'w') as fd:
                 yaml.dump(arg_run, fd)
 
-            # output conda packages
-            with open(f'{output_prefix}_{env.name}_packages.yml', 'w') as fd:
-                yaml.dump(env.packages, fd)
 
 
 class CurrentEnv:
