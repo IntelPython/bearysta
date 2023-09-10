@@ -99,12 +99,6 @@ def main():
         for j, f in enumerate(benchmarks):
             bname = os.path.splitext(os.path.basename(f))[0]
             progress_bench = 'benchmark "{}" ({}/{}) via {}'.format(bname, j+1, nbenches, progress_env)
-
-            # dump env pkg list to yml file
-            evn_pkg_list_file = '{}/{}/{}/{}/{}_packages.yml'.format(args.run_path, args.run_id, bname,
-                                            env.name, env.name)
-            env.dump_pkg_list_to_yaml(evn_pkg_list_file)
-
             print('#### Running', progress_bench)
             # Run benchmark
             apply_overrides = [o for o in overrides if (bname in o['override']['benchmark'] and env.name in o['override']['envs'])]

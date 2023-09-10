@@ -355,10 +355,6 @@ class CondaEnv:
                 packages[name.lower()] = {'name': name, 'version': ver, 'installer': 'pip'}
 
         return packages
-    
-    def dump_pkg_list_to_yaml(self, filename):
-        # output conda packages
-        with open(filename, 'w') as fd:
-            yaml.dump(self.packages, fd)
+
 
 
