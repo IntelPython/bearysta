@@ -68,6 +68,7 @@ class CondaEnv:
             with open(fn) as f:
                 config = yaml.load(f)
                 self.name = config['name']
+                self.benchmarks = config['benchmarks']
 
         # Deduce prefix from the env config if it wasn't given.
         if prefix is None:
@@ -130,7 +131,6 @@ class CondaEnv:
                 channels.extend(config['channels'])
                 self.install_packages(config['benchmarks'], installer='conda',
                                     no_deps=True, copy=True, channels=channels)
-                self.benchmarks = config['benchmarks']
 
         if not skip_listing:
             self.packages = self.get_packages()
