@@ -84,7 +84,7 @@ def main():
         progress_env = 'environment "{}" ({}/{})'.format(env.name, i+1, nenvs)
         print('##### Selected', progress_env)
 
-        # Get benchmark yamls
+        # Get all specified benchmark yamls
         if args.bench_path:
             benchmarks = glob.glob(os.path.join(os.path.abspath(args.bench_path), '*.yaml'))
         else:
@@ -94,6 +94,9 @@ def main():
         if args.benchmarks is not None:
             benchmarks = [b for b in benchmarks if
                     os.path.splitext(os.path.basename(b))[0] in args.benchmarks]
+        else:
+            # from the list of all available benchmarks pick ones which are installed in an environment
+            benchmarks = [b for b in benchmarks if os.path.splitext(os.path.basename(b))[0] in env.benchmarks]
 
         nbenches = len(benchmarks)
         for j, f in enumerate(benchmarks):

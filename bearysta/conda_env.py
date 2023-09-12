@@ -130,6 +130,7 @@ class CondaEnv:
                 channels.extend(config['channels'])
                 self.install_packages(config['benchmarks'], installer='conda',
                                     no_deps=True, copy=True, channels=channels)
+                self.benchmarks = config['benchmarks']
 
         if not skip_listing:
             self.packages = self.get_packages()
