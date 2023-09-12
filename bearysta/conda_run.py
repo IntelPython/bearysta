@@ -90,13 +90,12 @@ def main():
         else:
             benchmarks = glob.glob(os.path.join(env.prefix, 'benchmarks', '*.yaml'))
 
+        # from the list of all available benchmarks pick ones which are installed in an environment
+        benchmarks = [b for b in benchmarks if os.path.splitext(os.path.basename(b))[0] in env.benchmarks]
+
         # The user might have required specific benchmarks
         if args.benchmarks is not None:
-            benchmarks = [b for b in benchmarks if
-                    os.path.splitext(os.path.basename(b))[0] in args.benchmarks]
-        else:
-            # from the list of all available benchmarks pick ones which are installed in an environment
-            benchmarks = [b for b in benchmarks if os.path.splitext(os.path.basename(b))[0] in env.benchmarks]
+            benchmarks = set(benchmarks).intersection(args.benchmarks)
 
         nbenches = len(benchmarks)
         for j, f in enumerate(benchmarks):
