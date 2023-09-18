@@ -98,7 +98,7 @@ def main():
             progress_bench = 'benchmark "{}" ({}/{}) via {}'.format(bname, j+1, nbenches, progress_env)
             print('#### Running', progress_bench)
             # Run benchmark
-            apply_overrides = [o for o in overrides['override'] if (bname in o['benchmark'] and env.name in o['envs'])]
+            apply_overrides = [o['override'] for o in overrides if (bname in o['override']['benchmark'] and env.name in o['override']['envs'])]
             run.run_benchmark(env, f, run_id=args.run_id, commands=args.commands,
                           run_path=args.run_path, overrides=apply_overrides,
                           suite=bname, dry_run=args.dry_run, progress=progress_bench)
