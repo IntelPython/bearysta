@@ -71,11 +71,6 @@ def main():
             if 'override' not in o:
                 print('# WARNING: ignoring invalid override at {}'.format(f))
                 continue
-            for k, v in o['override'].items():
-                if type(v) is str:
-                    o['override'][k] = [v]
-
-            o['override']['envs'] = o['override'].get('envs', [e.name for e in envs])
             overrides.append(o)
 
     print('\n###### Running benchmarks... #######')
@@ -103,7 +98,7 @@ def main():
             progress_bench = 'benchmark "{}" ({}/{}) via {}'.format(bname, j+1, nbenches, progress_env)
             print('#### Running', progress_bench)
             # Run benchmark
-            apply_overrides = [o for o in overrides if (bname in o['override']['benchmark'] and env.name in o['override']['envs'])]
+            apply_overrides = [o for o in overrides['override'] if (bname in o['benchmark'] and env.name in o['envs'])]
             run.run_benchmark(env, f, run_id=args.run_id, commands=args.commands,
                           run_path=args.run_path, overrides=apply_overrides,
                           suite=bname, dry_run=args.dry_run, progress=progress_bench)
