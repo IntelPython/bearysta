@@ -91,7 +91,12 @@ def main():
 
         # The user might have required specific benchmarks
         if args.benchmarks is not None:
-            benchmarks = set(benchmarks).intersection(args.benchmarks)
+            new_benchmarks = []
+            for benchmark in args.benchmarks:
+                for benchfile in benchmarks:
+                    if benchmark in benchfile:
+                        new_benchmarks.append(benchfile)
+            benchmarks = new_benchmarks
 
         nbenches = len(benchmarks)
         for j, f in enumerate(benchmarks):
