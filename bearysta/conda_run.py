@@ -1,6 +1,7 @@
 import glob
 import os
 import time
+from copy import deepcopy
 
 import run
 
@@ -23,8 +24,9 @@ def main():
     parser.add_argument('--clean', '-C', action='store_true', default=False,
                         help="Delete environments before installing packages")
     parser.add_argument('--use-existing-env', '-E', action='store_true', default=False,
-                        help="Do not modify environments, install nothing but benchmarks."
-                             "(this is not the same as using the 'current' environment!)")
+                        help="Do not modify environments, just execute benchmarks there."
+                             "(Envs must contain all required benchmark packages and their dependencies"
+                             "If benchmarks are not installed then use --clean False")
     parser.add_argument('--skip-package-listing', action='store_true', default=False,
                         help="Skip 'pip freeze' and 'conda list' steps")
     parser.add_argument('--benchmarks', '-b', default=None, nargs='+',
@@ -33,11 +35,11 @@ def main():
                         help='Run these benchmark commands')
     parser.add_argument('--env-path', default=glob.glob('envs/*.yml'), nargs='+',
                         help='Read these environment configurations')
-    parser.add_argument('--bench-path', default=None, nargs='+',
-                        help='Read these benchmark configurations. '
+    parser.add_argument('--bench-path', default=None,
+                        help='Path to a folder with benchmark configurations. '
                         'If left unspecified, benchmark configurations will be '
                         'read from $CONDA_PREFIX/benchmarks for each env.')
-    parser.add_argument('--overrides-path', default=[], nargs='+',
+    parser.add_argument('--overrides-path', default=None,
                         help='Read these benchmark overrides.')
     parser.add_argument('--run-id', default=time.strftime('%Y-%m-%d_%H_%M_%S'),
                         help='Directory under the run path where outputs will go')
@@ -57,39 +59,44 @@ def main():
     args = parser.parse_args()
 
     print('###### Preparing environments... ######\n')
-    env_kwargs = dict(clobber=args.clean, skip_listing=args.skip_package_listing)
+    env_kwargs = dict(clobber=args.clean, skip_listing=args.skip_package_listing, existing_env=args.use_existing_env, run_path=args.run_path)
 
     envs = setup_environments(args.env_path, **env_kwargs)
 
     overrides = []
-    for f in args.overrides_path:
-        with open(f) as fd:
-            o = run.yaml.load(fd)
-        if 'override' not in o:
-            print('# WARNING: ignoring invalid override at {}'.format(f))
-            continue
-        for k, v in o['override'].items():
-            if type(v) is str:
-                o['override'][k] = [v]
-
-        o['override']['envs'] = o['override'].get('envs', [e.name for e in envs])
-        overrides.append(o)
+    if args.overrides_path:
+        override_configs = glob.glob(os.path.join(os.path.abspath(args.overrides_path), '*.yaml'))
+        for f in override_configs:
+            with open(f) as fd:
+                o = run.yaml.load(fd)
+            if 'override' not in o:
+                print('# WARNING: ignoring invalid override at {}'.format(f))
+                continue
+            overrides.append(o)
 
     print('\n###### Running benchmarks... #######')
     nenvs = len(envs)
     for i, env in enumerate(envs):
         progress_env = 'environment "{}" ({}/{})'.format(env.name, i+1, nenvs)
         print('##### Selected', progress_env)
-        # Get benchmark yamls
+
+        # Get all specified benchmark yamls
         if args.bench_path:
-            benchmarks = args.bench_path
+            benchmarks = glob.glob(os.path.join(os.path.abspath(args.bench_path), '*.yaml'))
         else:
             benchmarks = glob.glob(os.path.join(env.prefix, 'benchmarks', '*.yaml'))
 
+        # from the list of all available benchmarks pick ones which are installed in an environment
+        benchmarks = [b for b in benchmarks if os.path.splitext(os.path.basename(b))[0] in env.benchmarks]
+
         # The user might have required specific benchmarks
         if args.benchmarks is not None:
-            benchmarks = [b for b in benchmarks if
-                    os.path.splitext(os.path.basename(b))[0] in args.benchmarks]
+            new_benchmarks = []
+            for benchmark in args.benchmarks:
+                for benchfile in benchmarks:
+                    if benchmark in benchfile:
+                        new_benchmarks.append(benchfile)
+            benchmarks = new_benchmarks
 
         nbenches = len(benchmarks)
         for j, f in enumerate(benchmarks):
@@ -97,7 +104,7 @@ def main():
             progress_bench = 'benchmark "{}" ({}/{}) via {}'.format(bname, j+1, nbenches, progress_env)
             print('#### Running', progress_bench)
             # Run benchmark
-            apply_overrides = [o for o in overrides if (bname in o['override']['benchmark'] and env.name in o['override']['envs'])]
+            apply_overrides = [deepcopy(o['override']) for o in overrides if (bname in o['override']['benchmark'] and env.name in o['override']['envs'])]
             run.run_benchmark(env, f, run_id=args.run_id, commands=args.commands,
                           run_path=args.run_path, overrides=apply_overrides,
                           suite=bname, dry_run=args.dry_run, progress=progress_bench)

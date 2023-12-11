@@ -22,6 +22,13 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
         run_id = str(time.time())
     os.makedirs('{}/{}/{}/{}/'.format(run_path, run_id, suite, env.name), exist_ok=True)
 
+    # path prefix = folder for all files created here
+    path_prefix = '{}/{}/{}/{}'.format(run_path, run_id, suite, env.name)
+
+    # dump conda env packages into yaml
+    with open(f'{path_prefix}/{env.name}_packages.yml', 'w') as fd:
+        yaml.dump(env.packages, fd)
+
     with open(config) as f:
         bench = yaml.load(f)
 
@@ -91,8 +98,7 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
         for i, values in enumerate(itertools.product(*vals)):
             print('## Running combination {}/{} of {}' .format(i+1, product_length, progress_inside))
             # output to file
-            output_prefix = '{}/{}/{}/{}/{}_{}'.format(run_path, run_id, suite,
-                                                env.name, time.time(), endpoint)
+            output_prefix = '{}/{}_{}'.format(path_prefix, time.time(), endpoint)
             arg_run = dict(zip(keys, values))
             # a copy of visible variables
             args = arg_run.copy()
@@ -131,9 +137,6 @@ def run_benchmark(env, config, run_path='runs', run_id=None, commands=None,
             with open(output_prefix + meta_suff + '.meta', 'w') as fd:
                 yaml.dump(arg_run, fd)
 
-            # output conda packages
-            with open(f'{output_prefix}_{env.name}_packages.yml', 'w') as fd:
-                yaml.dump(env.packages, fd)
 
 
 class CurrentEnv:

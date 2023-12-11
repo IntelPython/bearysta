@@ -836,7 +836,7 @@ class Benchmark:
             # TODO - there has to be a better way of grabbing the raw config
             package_files = []
             for raw_config_glob in self.config['input']['config']:
-                raw_config_path = re.sub(r'\/config\/.*\.yml', f'/config/{raw_config_glob}', self.config_path)
+                raw_config_path = os.path.join(os.path.dirname(self.config_path),raw_config_glob)
                 raw_config = yaml.load(open(raw_config_path))
                 output_glob = raw_config['input']['packages_path']
                 package_files.extend(glob.glob(output_glob))
