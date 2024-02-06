@@ -68,7 +68,7 @@ class CondaEnv:
             with open(fn) as f:
                 config = yaml.load(f)
                 self.name = config['name']
-                self.benchmarks = config['benchmarks']
+                # self.benchmarks = config['benchmarks']
 
         # Deduce prefix from the env config if it wasn't given.
         if prefix is None:
@@ -122,15 +122,15 @@ class CondaEnv:
                 self.packages = self.get_packages()
 
 
-            # Install benchmarks if specified in the config.
-            if 'benchmarks' in config:
-                channels = config.get('benchmark-channels', [])
-                # FIXME GH-100 conda still runs the solver here, even though we
-                # ask for --no-deps, so we prevent it from failing by adding
-                # our channels...
-                channels.extend(config['channels'])
-                self.install_packages(config['benchmarks'], installer='conda',
-                                    no_deps=True, copy=True, channels=channels)
+            # # Install benchmarks if specified in the config.
+            # if 'benchmarks' in config:
+            #     channels = config.get('benchmark-channels', [])
+            #     # FIXME GH-100 conda still runs the solver here, even though we
+            #     # ask for --no-deps, so we prevent it from failing by adding
+            #     # our channels...
+            #     channels.extend(config['channels'])
+            #     self.install_packages(config['benchmarks'], installer='conda',
+            #                         no_deps=True, copy=True, channels=channels)
 
         if not skip_listing:
             self.packages = self.get_packages()
