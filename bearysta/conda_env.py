@@ -68,7 +68,7 @@ class CondaEnv:
             with open(fn) as f:
                 config = yaml.load(f)
                 self.name = config['name']
-                # self.benchmarks = config['benchmarks']
+                self.benchmarks = config['benchmarks']
 
         # Deduce prefix from the env config if it wasn't given.
         if prefix is None:
