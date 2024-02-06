@@ -200,7 +200,7 @@ class CondaEnv:
 
     def _get_source_cmd(self):
 
-        return ['source', os.path.join(self.get_base_prefix(), 'bin', 'activate')]
+        return ['.', os.path.join(self.get_base_prefix(), 'bin', 'activate')]
 
 
     def _get_activate_cmd(self, prefix=None):
