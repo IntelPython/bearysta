@@ -199,8 +199,8 @@ class CondaEnv:
 
 
     def _get_source_cmd(self):
-
-        return ['.', os.path.join(self.get_base_prefix(), 'bin', 'activate')]
+        # conda activate scripts are bash syntax
+        return ['/bin/bash', 'source', os.path.join(self.get_base_prefix(), 'bin', 'activate')]
 
 
     def _get_activate_cmd(self, prefix=None):
