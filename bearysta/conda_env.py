@@ -200,7 +200,7 @@ class CondaEnv:
 
     def _get_source_cmd(self):
         # conda activate scripts are bash syntax
-        return ['/bin/bash', 'source', os.path.join(self.get_base_prefix(), 'bin', 'activate')]
+        return ['source', os.path.join(self.get_base_prefix(), 'bin', 'activate')]
 
 
     def _get_activate_cmd(self, prefix=None):
@@ -251,7 +251,9 @@ class CondaEnv:
 
         if 'PATH' not in env:
             env['PATH'] = os.environ['PATH']
-        return Popen(activate_cmd, env=env, shell=True, **kwargs)
+
+        # when shell=True, it defaults to /bin/sh which is BAD
+        return Popen(activate_cmd, env=env, shell=True, executable='/bin/bash', **kwargs)
 
 
     def call_communicate(self, cmd, check=True, **kwargs):
