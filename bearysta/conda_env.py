@@ -2,7 +2,6 @@ from subprocess import Popen, PIPE
 import os
 import json
 import platform
-import shutil # python 3.3+
 import shlex # python 3.3+ for shlex.quote
 import tempfile
 import re
@@ -26,7 +25,7 @@ class CondaEnv:
 
 
     def __init__(self, fn=None, prefix=None, clobber=False,
-                 skip_listing=False):
+                 skip_listing=False, existing_env=False, run_path='runs'):
         '''Create or reference an existing environment with the given prefix.
         If an environment already exists at the given or implied prefix,
         the specified packages will be installed.
@@ -47,13 +46,19 @@ class CondaEnv:
             use an existing environment at the given prefix.
         prefix : str, optional
             The prefix for the conda environment. If not specified, we will
-            use ./envs/<name>.
+            use <run_path>/envs/<name>.
         clobber : bool, optional (default False)
             if True, destroy the current environment if any exists.
             This prevents weird things like updating certain packages
             and not getting the right dependencies.
         skip_listing : bool, optional (default False)
             if True, don't spend time listing packages.
+        existing_env: bool, optional (default False)
+            if True, use existing env. 
+            Do not install anything, but just execute benchmarks
+        run_path: (Default runs)
+            Directory where conda envs to be created, i.e. <run_path>/envs/
+            
         '''
 
         if fn is None and prefix is None:
@@ -63,65 +68,69 @@ class CondaEnv:
             with open(fn) as f:
                 config = yaml.load(f)
                 self.name = config['name']
+                self.benchmarks = config['benchmarks']
 
         # Deduce prefix from the env config if it wasn't given.
         if prefix is None:
-            self.prefix = os.path.join(os.getcwd(), 'envs', self.name)
+            self.prefix = os.path.join(os.path.abspath(run_path), 'envs', self.name)
         else:
             self.prefix = prefix
 
         self.base_prefix = self.get_base_prefix()
 
-        # If a configuration was passed, use it.
-        if fn:
+        if not os.path.exists(self.prefix) and existing_env:
+            raise ValueError('Cannot find existig envs.')
 
-            # Check if the prefix already exists.
-            if os.path.exists(self.prefix) and not clobber:
+        if not existing_env:
+            # If a configuration was passed, use it.
+            if fn:
 
-                # Install pip and conda packages separately...
-                pip_pkgs = []
-                conda_pkgs = []
-                for pkg in config['dependencies']:
-                    if type(pkg) is not str:
-                        pip_pkgs = pkg
-                    else:
-                        conda_pkgs.append(pkg)
+                # Check if the prefix already exists.
+                if os.path.exists(self.prefix) and not clobber:
+                        # Install pip and conda packages separately...
+                        pip_pkgs = []
+                        conda_pkgs = []
+                        for pkg in config['dependencies']:
+                            if type(pkg) is not str:
+                                pip_pkgs = pkg
+                            else:
+                                conda_pkgs.append(pkg)
 
-                self.install_packages(conda_pkgs, installer='conda',
-                                      channels=config['channels'])
-                self.install_packages(pip_pkgs, installer='pip')
-            else:
-                # We first should write a config for conda because it doesn't
-                # like to see any extra keys in the config
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.yml') as tmp:
-                    conda_env_config = {k: config[k] for k in ['name', 'channels',
-                                                               'dependencies']}
-                    yaml.dump(conda_env_config, tmp)
-                    tmp.flush()
+                        self.install_packages(conda_pkgs, installer='conda',
+                                            channels=config['channels'])
+                        self.install_packages(pip_pkgs, installer='pip')
+                else:
+                    # We first should write a config for conda because it doesn't
+                    # like to see any extra keys in the config
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml') as tmp:
+                        conda_env_config = {k: config[k] for k in ['name', 'channels',
+                                                                'dependencies']}
+                        yaml.dump(conda_env_config, tmp)
+                        tmp.flush()
 
-                    # conda env create is for using environment files, while
-                    # conda create is for command-line creation...
-                    create_cmd = ['env', 'create']
-                    create_cmd += self._get_prefix_args()
-                    create_cmd += ['--file', tmp.name]
+                        # conda env create is for using environment files, while
+                        # conda create is for command-line creation...
+                        create_cmd = ['env', 'create']
+                        create_cmd += self._get_prefix_args()
+                        create_cmd += ['--file', tmp.name]
 
-                    if clobber:
-                        create_cmd += ['--force']
+                        if clobber:
+                            create_cmd += ['--force']
 
-                    self._call_conda(create_cmd)
+                        self._call_conda(create_cmd)
 
-            self.packages = self.get_packages()
+                self.packages = self.get_packages()
 
 
-        # Install benchmarks if specified in the config.
-        if 'benchmarks' in config:
-            channels = config.get('benchmark-channels', [])
-            # FIXME GH-100 conda still runs the solver here, even though we
-            # ask for --no-deps, so we prevent it from failing by adding
-            # our channels...
-            channels.extend(config['channels'])
-            self.install_packages(config['benchmarks'], installer='conda',
-                                  no_deps=True, copy=True, channels=channels)
+            # # Install benchmarks if specified in the config.
+            # if 'benchmarks' in config:
+            #     channels = config.get('benchmark-channels', [])
+            #     # FIXME GH-100 conda still runs the solver here, even though we
+            #     # ask for --no-deps, so we prevent it from failing by adding
+            #     # our channels...
+            #     channels.extend(config['channels'])
+            #     self.install_packages(config['benchmarks'], installer='conda',
+            #                         no_deps=True, copy=True, channels=channels)
 
         if not skip_listing:
             self.packages = self.get_packages()
@@ -190,8 +199,8 @@ class CondaEnv:
 
 
     def _get_source_cmd(self):
-
-        return ['.', os.path.join(self.get_base_prefix(), 'etc', 'profile.d', 'conda.sh')]
+        # conda activate scripts are bash syntax
+        return ['source', os.path.join(self.get_base_prefix(), 'bin', 'activate')]
 
 
     def _get_activate_cmd(self, prefix=None):
@@ -242,7 +251,9 @@ class CondaEnv:
 
         if 'PATH' not in env:
             env['PATH'] = os.environ['PATH']
-        return Popen(activate_cmd, env=env, shell=True, **kwargs)
+
+        # when shell=True, it defaults to /bin/sh which is BAD
+        return Popen(activate_cmd, env=env, shell=True, executable='/bin/bash', **kwargs)
 
 
     def call_communicate(self, cmd, check=True, **kwargs):
@@ -347,5 +358,6 @@ class CondaEnv:
                 packages[name.lower()] = {'name': name, 'version': ver, 'installer': 'pip'}
 
         return packages
+
 
 
