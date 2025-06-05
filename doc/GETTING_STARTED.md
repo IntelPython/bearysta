@@ -273,7 +273,7 @@ later for aggregation.
 
 ## Notes from running 2020 benchmarks
 
-Here is the procedure I followed to run benchmarks for 2020.
+Here is the procedure I followed to run benchmarks for 2020:
 
 - Set up a new benchmark channel `packages_2020`
 - Built all packages into that benchmark channel. For each benchmark recipe, I ran
